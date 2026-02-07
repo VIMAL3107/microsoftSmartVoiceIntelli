@@ -22,34 +22,39 @@ def send_verification_email(to_email: str, token: str):
     msg["From"] = EMAIL_FROM
     msg["To"] = to_email
 
-    try:
-        logger.info(f"Connecting to SMTP server: {SMTP_SERVER}:{SMTP_PORT}")
-        # Force SSL context
-        context = smtplib.ssl.create_default_context()
-        
-        if SMTP_PORT == 465:
-            server = smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT, context=context)
-        else:
-            server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=15) # Longer timeout
-            try:
-                server.connect(SMTP_SERVER, SMTP_PORT)
-            except socket.error as e:
-                logger.error(f"Failed to connect to {SMTP_SERVER}:{SMTP_PORT}. NETWORK ERROR. Try Port 465.")
-                raise
-            server.ehlo()
-            server.starttls(context=context)
-            server.ehlo()
+    for port in [SMTP_PORT, 465]:
+        try:
+            logger.info(f"Connecting to SMTP server: {SMTP_SERVER}:{port}")
+            context = smtplib.ssl.create_default_context()
             
-        server.login(EMAIL_FROM, EMAIL_PASSWORD)
-        server.sendmail(EMAIL_FROM, to_email, msg.as_string())
-        server.quit()
-        logger.info(f"Verification email sent to {to_email}")
-    except smtplib.SMTPAuthenticationError:
-        logger.error("SMTP Auth Error: Check EMAIL_FROM and EMAIL_PASSWORD.")
-        raise
-    except Exception as e:
-        logger.error(f"Failed to send email: {e}")
-        raise
+            if port == 465:
+                server = smtplib.SMTP_SSL(SMTP_SERVER, port, context=context)
+            else:
+                server = smtplib.SMTP(SMTP_SERVER, port, timeout=15)
+                # Try explicit connect to catch network errors early
+                try:
+                    server.connect(SMTP_SERVER, port)
+                except (socket.error, OSError) as e:
+                    logger.warning(f"Connection to port {port} failed ({e}). Trying next port...")
+                    server.close()
+                    continue
+                
+                server.ehlo()
+                server.starttls(context=context)
+                server.ehlo()
+            
+            # If we reached here, connection is good. Try login.
+            server.login(EMAIL_FROM, EMAIL_PASSWORD)
+            server.sendmail(EMAIL_FROM, to_email, msg.as_string())
+            server.quit()
+            logger.info(f"Verification email sent to {to_email}")
+            return # Success!
+            
+        except Exception as e:
+            logger.warning(f"Failed to send via port {port}: {e}")
+            if port == 465: # If last attempt failed
+                 logger.error("All email attempts failed.")
+                 raise e
 
 def send_report_email_with_attachment(to_email: str, subject: str, body: str, file_path: str):
     msg = MIMEMultipart()
@@ -70,16 +75,22 @@ def send_report_email_with_attachment(to_email: str, subject: str, body: str, fi
         logger.warning(f"Attachment not found: {file_path}")
 
     max_retries = 3
-    for attempt in range(max_retries):
+    # Try ports in order: Configured Port, then 465 (fallback)
+    # Use a set to avoid duplicates if SMTP_PORT is already 465
+    ports_to_try = [SMTP_PORT]
+    if SMTP_PORT != 465:
+        ports_to_try.append(465)
+
+    for port in ports_to_try:
         try:
-            logger.info(f"Connecting to SMTP server: {SMTP_SERVER}:{SMTP_PORT} (Attempt {attempt + 1}/{max_retries})")
+            logger.info(f"Connecting to SMTP server: {SMTP_SERVER}:{port}")
             context = smtplib.ssl.create_default_context()
             
-            if SMTP_PORT == 465:
-                server = smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT, context=context)
+            if port == 465:
+                server = smtplib.SMTP_SSL(SMTP_SERVER, port, context=context)
             else:
-                server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=30)
-                server.connect(SMTP_SERVER, SMTP_PORT)
+                server = smtplib.SMTP(SMTP_SERVER, port, timeout=30)
+                server.connect(SMTP_SERVER, port)
                 server.ehlo()
                 server.starttls(context=context)
                 server.ehlo()
@@ -89,10 +100,9 @@ def send_report_email_with_attachment(to_email: str, subject: str, body: str, fi
             server.quit()
             logger.info(f"Report email sent to {to_email}")
             return
+            
         except Exception as e:
-            logger.warning(f"Attempt {attempt + 1} failed: {e}")
-            if attempt < max_retries - 1:
-                time.sleep(5)
-            else:
-                logger.error(f"Failed to send report email via {SMTP_SERVER}:{SMTP_PORT} after {max_retries} attempts: {e}")
-                raise
+            logger.warning(f"Failed to send report via port {port}: {e}")
+            if port == 465: # If last fallback failed
+                logger.error(f"All report email attempts failed.")
+                raise e
