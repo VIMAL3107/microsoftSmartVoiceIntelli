@@ -116,4 +116,10 @@ def login(user: UserLogin, request: Request, db: Session = Depends(get_db)):
         "username": db_user.username
     }
 
-    return {"status": "success", "message": "Login successful", "ip": client_ip, "user_id": db_user.id}
+    return {
+        "status": "success", 
+        "message": "Login successful", 
+        "ip": client_ip, 
+        "user_id": db_user.id,
+        "username": db_user.username
+    }

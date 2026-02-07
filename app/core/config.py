@@ -69,10 +69,23 @@ if isinstance(VALID_LICENSE_KEYS, str):
         VALID_LICENSE_KEYS = []
 
 # Report Scheduling
+# Report Scheduling
 REPORT_SCHEDULE = config.get("REPORT_SCHEDULE", {})
-REPORT_SCHEDULE_ENABLED = REPORT_SCHEDULE.get("enabled", False)
-REPORT_INTERVAL_MINUTES = REPORT_SCHEDULE.get("interval_minutes", 10.0)
-REPORT_EMAIL_TO = REPORT_SCHEDULE.get("email_to", "iamvimal3107@gmail.com")
+# Support parsing REPORT_SCHEDULE from Env if it's a JSON string
+env_report_schedule = os.getenv("REPORT_SCHEDULE")
+if env_report_schedule and isinstance(env_report_schedule, str):
+    try:
+        parsed_schedule = json.loads(env_report_schedule)
+        if isinstance(parsed_schedule, dict):
+             # Update/Override the config based on Env JSON
+             REPORT_SCHEDULE.update(parsed_schedule)
+    except json.JSONDecodeError:
+        pass
+
+REPORT_SCHEDULE_ENABLED = str(os.getenv("REPORT_SCHEDULE_ENABLED", REPORT_SCHEDULE.get("enabled", False))).lower() == "true"
+REPORT_INTERVAL_MINUTES = float(os.getenv("REPORT_INTERVAL_MINUTES", REPORT_SCHEDULE.get("interval_minutes", 10.0)))
+REPORT_EMAIL_TO = os.getenv("REPORT_EMAIL_TO", REPORT_SCHEDULE.get("email_to", "iamvimal3107@gmail.com"))
+REPORT_DAILY_TIME = os.getenv("REPORT_DAILY_TIME", REPORT_SCHEDULE.get("daily_time"))
 # Database
 # Using SQLite for now as per original code
 DATABASE_URL = "sqlite:///./voice_translate.db"

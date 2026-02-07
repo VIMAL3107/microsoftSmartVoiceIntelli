@@ -3,7 +3,7 @@ import time
 import logging
 import threading
 from datetime import datetime
-from app.core.config import load_encrypted_config
+from app.core.config import load_encrypted_config, REPORT_SCHEDULE_ENABLED, REPORT_INTERVAL_MINUTES, REPORT_EMAIL_TO, REPORT_DAILY_TIME
 from app.core.database import get_db
 from app.api.reports import trigger_batch_report 
 
@@ -35,16 +35,20 @@ def run_scheduler_loop():
     while True:
         try:
             # Re-load config to pick up changes without restarting
+            t_cfg = {}
             try:
                 current_cfg = load_encrypted_config("config.enc")
                 t_cfg = current_cfg.get("REPORT_SCHEDULE", {})
             except Exception:
-                t_cfg = {}
+                pass # Use defaults
 
-            if t_cfg.get("enabled"):
-                interval = float(t_cfg.get("interval_minutes", 0))
-                daily_time = t_cfg.get("daily_time") # Format "HH:MM" e.g. "20:00"
-                to_email = t_cfg.get("email_to")
+            # Fallback to Environ Variables/Global Config
+            s_enabled = t_cfg.get("enabled", REPORT_SCHEDULE_ENABLED)
+            interval = float(t_cfg.get("interval_minutes", REPORT_INTERVAL_MINUTES))
+            daily_time = t_cfg.get("daily_time", REPORT_DAILY_TIME) # Format "HH:MM" e.g. "20:00"
+            to_email = t_cfg.get("email_to", REPORT_EMAIL_TO)
+
+            if s_enabled:
 
                 if not to_email:
                     time.sleep(60)
