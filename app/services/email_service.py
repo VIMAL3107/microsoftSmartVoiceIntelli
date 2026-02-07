@@ -19,6 +19,7 @@ def send_verification_email(to_email: str, token: str):
     msg["To"] = to_email
 
     try:
+        logger.info(f"Connecting to SMTP server: {SMTP_SERVER}:{SMTP_PORT}")
         if SMTP_PORT == 465:
             server = smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT)
         else:
@@ -30,7 +31,7 @@ def send_verification_email(to_email: str, token: str):
         server.quit()
         logger.info(f"Verification email sent to {to_email}")
     except Exception as e:
-        logger.error(f"Failed to send email: {e}")
+        logger.error(f"Failed to send verification email via {SMTP_SERVER}:{SMTP_PORT}: {e}")
         raise
 
 def send_report_email_with_attachment(to_email: str, subject: str, body: str, file_path: str):
@@ -52,6 +53,7 @@ def send_report_email_with_attachment(to_email: str, subject: str, body: str, fi
         logger.warning(f"Attachment not found: {file_path}")
 
     try:
+        logger.info(f"Connecting to SMTP server: {SMTP_SERVER}:{SMTP_PORT}")
         if SMTP_PORT == 465:
             server = smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT)
         else:
@@ -63,5 +65,5 @@ def send_report_email_with_attachment(to_email: str, subject: str, body: str, fi
         server.quit()
         logger.info(f"Report email sent to {to_email}")
     except Exception as e:
-        logger.error(f"Failed to send email: {e}")
+        logger.error(f"Failed to send report email via {SMTP_SERVER}:{SMTP_PORT}: {e}")
         raise
