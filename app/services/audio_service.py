@@ -84,7 +84,11 @@ def split_wav(path_wav: str, chunk_sec: int = 60):
     return chunks
 
 def translate_audio_autodetect(path_wav: str) -> Dict[str, Any]:
-    stc = speechsdk.translation.SpeechTranslationConfig(subscription=SPEECH_KEY, region=SPEECH_REGION)
+    try:
+        stc = speechsdk.translation.SpeechTranslationConfig(subscription=SPEECH_KEY, region=SPEECH_REGION)
+    except Exception as e:
+        logger.error(f"Failed to create SpeechTranslationConfig. Verify SPEECH_KEY and SPEECH_REGION. Error: {e}")
+        raise HTTPException(status_code=500, detail="Speech service configuration failed. Please check server logs.")
     stc.add_target_language(TARGET_LANG)
     stc.set_property(speechsdk.PropertyId.SpeechServiceConnection_InitialSilenceTimeoutMs, "10000")
     stc.set_property(speechsdk.PropertyId.SpeechServiceConnection_EndSilenceTimeoutMs, "2000")

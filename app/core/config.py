@@ -41,17 +41,21 @@ ALGORITHM = config.get("ALGORITHM", "HS256")
 ACCESS_TOKEN_EXPIRE_MINUTES = config.get("ACCESS_TOKEN_EXPIRE_MINUTES", 60)
 
 # Azure Speech
-SPEECH_KEY = config.get("AZURE_SPEECH_KEY", "").strip()
-SPEECH_REGION = config.get("AZURE_SPEECH_REGION", "").strip()
-TARGET_LANG = config.get("TARGET_LANG", "en").strip()
-AUTODETECT_LANGS_RAW = config.get("AUTODETECT_LANGS", "en-US,ta-IN,hi-IN,te-IN,kn-IN").strip()
+# Azure Speech
+SPEECH_KEY = os.getenv("AZURE_SPEECH_KEY", config.get("AZURE_SPEECH_KEY", "")).strip()
+SPEECH_REGION = os.getenv("AZURE_SPEECH_REGION", config.get("AZURE_SPEECH_REGION", "")).strip()
+TARGET_LANG = os.getenv("TARGET_LANG", config.get("TARGET_LANG", "en")).strip()
+AUTODETECT_LANGS_RAW = os.getenv("AUTODETECT_LANGS", config.get("AUTODETECT_LANGS", "en-US,ta-IN,hi-IN,te-IN,kn-IN")).strip()
 AUTODETECT_LANGS = [l.strip() for l in AUTODETECT_LANGS_RAW.split(",") if l.strip()][:4]
 
+if not SPEECH_KEY or not SPEECH_REGION:
+    print("CRITICAL WARNING: AZURE_SPEECH_KEY or AZURE_SPEECH_REGION is missing!")
+
 # Azure OpenAI
-AOAI_KEY = config.get("AZURE_OPENAI_KEY", "").strip()
-AOAI_ENDPOINT = config.get("AZURE_OPENAI_ENDPOINT", "").strip().rstrip('/')
-AOAI_MODEL = config.get("AZURE_OPENAI_MODEL", "").strip()
-AOAI_API_VER = config.get("AZURE_OPENAI_API_VERSION", "2024-12-01-preview")
+AOAI_KEY = os.getenv("AZURE_OPENAI_KEY", config.get("AZURE_OPENAI_KEY", "")).strip()
+AOAI_ENDPOINT = os.getenv("AZURE_OPENAI_ENDPOINT", config.get("AZURE_OPENAI_ENDPOINT", "")).strip().rstrip('/')
+AOAI_MODEL = os.getenv("AZURE_OPENAI_MODEL", config.get("AZURE_OPENAI_MODEL", "")).strip()
+AOAI_API_VER = os.getenv("AZURE_OPENAI_API_VERSION", config.get("AZURE_OPENAI_API_VERSION", "2024-12-01-preview"))
 
 # Email
 EMAIL_FROM = os.getenv("EMAIL_FROM", config.get("EMAIL_FROM"))
