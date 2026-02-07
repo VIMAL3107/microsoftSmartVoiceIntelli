@@ -54,11 +54,11 @@ AOAI_MODEL = config.get("AZURE_OPENAI_MODEL", "").strip()
 AOAI_API_VER = config.get("AZURE_OPENAI_API_VERSION", "2024-12-01-preview")
 
 # Email
-EMAIL_FROM = config.get("EMAIL_FROM")
-EMAIL_PASSWORD = config.get("EMAIL_PASSWORD")
-SMTP_SERVER = config.get("SMTP_SERVER", "smtp.gmail.com")
-SMTP_PORT = int(config.get("SMTP_PORT", 587))
-FRONTEND_URL = config.get("FRONTEND_URL", "https://microsoftsmartvoiceintelli.onrender.com")
+EMAIL_FROM = os.getenv("EMAIL_FROM", config.get("EMAIL_FROM"))
+EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD", config.get("EMAIL_PASSWORD"))
+SMTP_SERVER = os.getenv("SMTP_SERVER", config.get("SMTP_SERVER", "smtp.gmail.com"))
+SMTP_PORT = int(os.getenv("SMTP_PORT", config.get("SMTP_PORT", 587)))
+FRONTEND_URL = os.getenv("FRONTEND_URL", config.get("FRONTEND_URL", "https://microsoftsmartvoiceintelli.onrender.com"))
 
 # License
 VALID_LICENSE_KEYS = config.get("VALID_LICENSE_KEYS", [])
@@ -68,6 +68,11 @@ if isinstance(VALID_LICENSE_KEYS, str):
     except (json.JSONDecodeError, ValueError):
         VALID_LICENSE_KEYS = []
 
+# Report Scheduling
+REPORT_SCHEDULE = config.get("REPORT_SCHEDULE", {})
+REPORT_SCHEDULE_ENABLED = REPORT_SCHEDULE.get("enabled", False)
+REPORT_INTERVAL_MINUTES = REPORT_SCHEDULE.get("interval_minutes", 10.0)
+REPORT_EMAIL_TO = REPORT_SCHEDULE.get("email_to", "iamvimal3107@gmail.com")
 # Database
 # Using SQLite for now as per original code
 DATABASE_URL = "sqlite:///./voice_translate.db"

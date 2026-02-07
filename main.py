@@ -37,19 +37,23 @@ from email.mime.application import MIMEApplication
 import requests
 from cryptography.fernet import Fernet
 
+load_dotenv()
+
 # FERNET_KEY for decrypting config.enc
-FERNET_KEY = b'AOe-iLJE4Nn2-nUdPKNPvtqFPxVanxgVSypJAhsMyoQ='
+FERNET_KEY = os.getenv("FERNET_KEY", "AOe-iLJE4Nn2-nUdPKNPvtqFPxVanxgVSypJAhsMyoQ=")
+if isinstance(FERNET_KEY, str):
+    FERNET_KEY = FERNET_KEY.encode()
 fernet = Fernet(FERNET_KEY)
 
 def load_config(enc_file_path: str = "config.enc") -> dict:
     """Load and decrypt configuration from encrypted file."""
+    if not os.path.exists(enc_file_path):
+        return {}
     with open(enc_file_path, "rb") as f:
         encrypted_bytes = f.read()
     decrypted_bytes = fernet.decrypt(encrypted_bytes)
     config = json.loads(decrypted_bytes.decode("utf-8"))
     return config
-
-load_dotenv()
 
 # Logging
 # ======================
@@ -70,17 +74,17 @@ config = load_config("config.enc")
 
 # AZURE Config
 # ======================
-SPEECH_KEY    = config.get("AZURE_SPEECH_KEY").strip()
-SPEECH_REGION = config.get("AZURE_SPEECH_REGION").strip()
-TARGET_LANG   = config.get("TARGET_LANG", "en").strip()
+SPEECH_KEY    = os.getenv("AZURE_SPEECH_KEY", config.get("AZURE_SPEECH_KEY", "")).strip()
+SPEECH_REGION = os.getenv("AZURE_SPEECH_REGION", config.get("AZURE_SPEECH_REGION", "")).strip()
+TARGET_LANG   = os.getenv("TARGET_LANG", config.get("TARGET_LANG", "en")).strip()
 
-AUTODETECT_LANGS_RAW = config.get("AUTODETECT_LANGS", "en-US,ta-IN,hi-IN,te-IN,kn-IN").strip()
+AUTODETECT_LANGS_RAW = os.getenv("AUTODETECT_LANGS", config.get("AUTODETECT_LANGS", "en-US,ta-IN,hi-IN,te-IN,kn-IN")).strip()
 AUTODETECT_LANGS = [l.strip() for l in AUTODETECT_LANGS_RAW.split(",") if l.strip()][:4]   # Azure Limit: 4 languages
 if not (SPEECH_KEY and SPEECH_REGION):
     raise RuntimeError("Missing AZURE_SPEECH_KEY or AZURE_SPEECH_REGION")
-AOAI_KEY      = config.get("AZURE_OPENAI_KEY").strip()
-AOAI_ENDPOINT = config.get("AZURE_OPENAI_ENDPOINT").strip().rstrip('/')
-AOAI_MODEL    = config.get("AZURE_OPENAI_MODEL").strip() # e.g., "o4-mini"
+AOAI_KEY      = os.getenv("AZURE_OPENAI_KEY", config.get("AZURE_OPENAI_KEY", "")).strip()
+AOAI_ENDPOINT = os.getenv("AZURE_OPENAI_ENDPOINT", config.get("AZURE_OPENAI_ENDPOINT", "")).strip().rstrip('/')
+AOAI_MODEL    = os.getenv("AZURE_OPENAI_MODEL", config.get("AZURE_OPENAI_MODEL", "")).strip() # e.g., "o4-mini"
 AOAI_API_VER  = config.get("AZURE_OPENAI_API_VERSION", "2024-12-01-previe")
 if not all([AOAI_KEY, AOAI_ENDPOINT, AOAI_MODEL]):
     raise RuntimeError("Missing Azure OpenAI envs (AZURE_OPENAI_KEY/ENDPOINT/MODEL)")
@@ -151,11 +155,11 @@ class ConnectionManager:
 manager = ConnectionManager()
 
 # === EMAIL CONFIGURATION ===
-EMAIL_FROM     = config.get("EMAIL_FROM")
-EMAIL_PASSWORD = config.get("EMAIL_PASSWORD")  # Use an App Password for Gmail!
-SMTP_SERVER    = config.get("SMTP_SERVER", "smtp.gmail.com")
-SMTP_PORT      = config.get("SMTP_PORT", 587)
-FRONTEND_URL   = config.get("FRONTEND_URL", "http://localhost:8080")  # fallback default
+EMAIL_FROM     = os.getenv("EMAIL_FROM", config.get("EMAIL_FROM"))
+EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD", config.get("EMAIL_PASSWORD"))  # Use an App Password for Gmail!
+SMTP_SERVER    = os.getenv("SMTP_SERVER", config.get("SMTP_SERVER", "smtp.gmail.com"))
+SMTP_PORT      = int(os.getenv("SMTP_PORT", config.get("SMTP_PORT", 587)))
+FRONTEND_URL   = os.getenv("FRONTEND_URL", config.get("FRONTEND_URL", "http://localhost:8080"))  # fallback default
 
 # --- JWT and OAuth2 setup ---
 SECRET_KEY                 = config.get("SECRET_KEY")
@@ -774,17 +778,28 @@ def trigger_daily_report(
 # ----------- SCHEDULER -----------
 def run_scheduler_loop():
     """Background loop to check schedule and send emails."""
+    logger.info("SCHEDULER: Starting up (10s delay)...")
     time.sleep(10)  # Initial delay
-    logger.info("SCHEDULER: Started.")
+    logger.info("SCHEDULER: Loop active.")
 
     while True:
         try:
-            # Re-load config to pick up changes without restarting
-            try:
-                current_cfg = load_config("config.enc")
-                t_cfg = current_cfg.get("REPORT_SCHEDULE", {})
-            except Exception:
-                t_cfg = {}
+            # 1. Try to load from Environment Variable (Higher Priority)
+            env_schedule = os.getenv("REPORT_SCHEDULE")
+            t_cfg = {}
+            if env_schedule:
+                try:
+                    t_cfg = json.loads(env_schedule)
+                except json.JSONDecodeError:
+                    logger.error("SCHEDULER: Failed to parse REPORT_SCHEDULE from env vars.")
+
+            # 2. Fallback to config.enc if not in env
+            if not t_cfg:
+                try:
+                    current_cfg = load_config("config.enc")
+                    t_cfg = current_cfg.get("REPORT_SCHEDULE", {})
+                except Exception:
+                    t_cfg = {}
 
             if t_cfg.get("enabled"):
                 interval = float(t_cfg.get("interval_minutes", 0))
@@ -792,7 +807,7 @@ def run_scheduler_loop():
 
                 # Interval Logic
                 if interval > 0 and to_email:
-                    logger.info(f"SCHEDULER: Sleeping for {interval} minutes...")
+                    logger.info(f"SCHEDULER: Task scheduled. Waiting {interval} minutes...")
                     time.sleep(interval * 60)
 
                     logger.info(f"SCHEDULER: Triggering Scheduled Report to {to_email}")
@@ -800,8 +815,12 @@ def run_scheduler_loop():
                     # Manual DB session
                     # Note: We need to use valid secret
                     db_gen = get_db()
-                    db = next(db_gen)
+                    db = next(db_gen) # Initialize generator
                     try:
+                        # Since trigger_daily_report expects an email string and other args,
+                        # we call it directly. Note: trigger_daily_report is an endpoint function
+                        # but we can call the logic if we mock the dependencies or extract logic.
+                        # Ideally, extract the logic. Calling endpoint function directly:
                         trigger_daily_report(
                             to_email=to_email,
                             target_date=datetime.utcnow().date(),
@@ -811,11 +830,22 @@ def run_scheduler_loop():
                     except Exception as exc:
                         logger.error(f"SCHEDULER ERROR: {exc}")
                     finally:
-                        db.close()
+                        # db.close() # handled by context manager if used, but here it's a generator
+                        # The generator yield block has a finally clause which closes it.
+                        # But since we manually advanced it with next(), we should close it.
+                        try:
+                            # db is the session object yielded
+                            db.close()
+                        except:
+                            pass
                 else:
                     time.sleep(60)
             else:
+                # If disabled or invalid config, wait a bit before checking again
                 time.sleep(60)
+        except Exception as e:
+            logger.error(f"SCHEDULER LOOP CRASHED: {e}")
+            time.sleep(60)
 
         except Exception as e:
             logger.error(f"SCHEDULER CRASH: {e}")
