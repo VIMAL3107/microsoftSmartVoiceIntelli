@@ -8,7 +8,9 @@ load_dotenv()
 
 # FERNET_KEY for decrypting config.enc
 # Ideally this should be in env vars too, but keeping as per original code
-FERNET_KEY = b'AOe-iLJE4Nn2-nUdPKNPvtqFPxVanxgVSypJAhsMyoQ='
+FERNET_KEY = os.getenv("FERNET_KEY")
+if not FERNET_KEY:
+    raise ValueError("FERNET_KEY not found in environment variables")
 fernet = Fernet(FERNET_KEY)
 
 def load_encrypted_config(enc_file_path: str = "config.enc") -> dict:
