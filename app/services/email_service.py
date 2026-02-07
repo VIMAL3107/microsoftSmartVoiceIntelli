@@ -18,10 +18,20 @@ def send_verification_email(to_email: str, token: str):
     msg["From"] = EMAIL_FROM
     msg["To"] = to_email
 
-    with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
-        server.starttls()
+    try:
+        if SMTP_PORT == 465:
+            server = smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT)
+        else:
+            server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+            server.starttls()
+            
         server.login(EMAIL_FROM, EMAIL_PASSWORD)
         server.sendmail(EMAIL_FROM, to_email, msg.as_string())
+        server.quit()
+        logger.info(f"Verification email sent to {to_email}")
+    except Exception as e:
+        logger.error(f"Failed to send email: {e}")
+        raise
 
 def send_report_email_with_attachment(to_email: str, subject: str, body: str, file_path: str):
     msg = MIMEMultipart()
@@ -41,7 +51,17 @@ def send_report_email_with_attachment(to_email: str, subject: str, body: str, fi
     else:
         logger.warning(f"Attachment not found: {file_path}")
 
-    with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
-        server.starttls()
+    try:
+        if SMTP_PORT == 465:
+            server = smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT)
+        else:
+            server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+            server.starttls()
+            
         server.login(EMAIL_FROM, EMAIL_PASSWORD)
         server.sendmail(EMAIL_FROM, to_email, msg.as_string())
+        server.quit()
+        logger.info(f"Report email sent to {to_email}")
+    except Exception as e:
+        logger.error(f"Failed to send email: {e}")
+        raise

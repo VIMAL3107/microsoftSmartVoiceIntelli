@@ -57,7 +57,7 @@ AOAI_API_VER = config.get("AZURE_OPENAI_API_VERSION", "2024-12-01-preview")
 EMAIL_FROM = config.get("EMAIL_FROM")
 EMAIL_PASSWORD = config.get("EMAIL_PASSWORD")
 SMTP_SERVER = config.get("SMTP_SERVER", "smtp.gmail.com")
-SMTP_PORT = config.get("SMTP_PORT", 587)
+SMTP_PORT = config.get("SMTP_PORT", 465)
 FRONTEND_URL = config.get("FRONTEND_URL", "http://localhost:8080")
 
 # License
