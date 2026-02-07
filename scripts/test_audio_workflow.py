@@ -4,7 +4,7 @@ import time
 import sys
 
 # Configuration
-BASE_URL = "http://127.0.0.1:8000"
+BASE_URL = "https://microsoftsmartvoiceintelli.onrender.com"
 USERNAME = "vimal011       n"
 PASSWORD = "1234"
 AUDIO_DIR = r"c:\Users\nexge\Music\Projects\microsoftSmartVoiceIntelli\audio test"

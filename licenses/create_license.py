@@ -7,11 +7,11 @@ from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.backends import default_backend
 
 # --- CONFIGURATION ---
-PRIVATE_KEY_FILE = "private.pem"  # You need this file to sign!
+PRIVATE_KEY_FILE = "licenses/private.pem"  # You need this file to sign!
 LICENSE_FILENAME = "licenses/new_user_license.bin"
 
 LICENSE_DATA = {
-    "allowed_ip": "127.0.0.1",
+    "allowed_ip": "https://microsoftsmartvoiceintelli.onrender.com",
     "start_date": datetime.datetime.utcnow().isoformat() + "Z", # "2023-10-16T12:00:00Z"
     "end_date": "2026-12-31T23:59:59Z"   # Adjust validity here
 }
