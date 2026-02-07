@@ -385,6 +385,27 @@ def get_user_calls(
 
     return response_data
 
+
+def sanitize_for_pdf(text: str) -> str:
+    if not text:
+        return ""
+    # Map common characters that aren't in Latin-1
+    replacements = {
+        '\u20b9': 'Rs. ', # Rupee
+        '\u2013': '-',    # En dash
+        '\u2014': '--',   # Em dash
+        '\u2018': "'",    # Left single quote
+        '\u2019': "'",    # Right single quote
+        '\u201c': '"',    # Left double quote
+        '\u201d': '"',    # Right double quote
+        '\u2026': '...',  # Ellipsis
+    }
+    for char, replacement in replacements.items():
+        text = text.replace(char, replacement)
+        
+    # Finally, encode to latin-1 ignoring/replacing remaining errors
+    return text.encode('latin-1', 'replace').decode('latin-1')
+
 @router.get("/download/")
 def download_pdf(
     session_id: str = Query(..., description="Session ID of the call to download"),
@@ -409,19 +430,19 @@ def download_pdf(
     pdf.add_page()
     pdf.set_auto_page_break(auto=True, margin=15)
     pdf.set_font("Arial", "B", 16)
-    pdf.cell(0, 10, f"Call Report - Session ID: {session_id}", ln=True, align='C')
+    pdf.cell(0, 10, sanitize_for_pdf(f"Call Report - Session ID: {session_id}"), ln=True, align='C')
     pdf.ln(10)
 
     pdf.set_font("Arial", "B", 14)
     pdf.cell(0, 10, "Translate:", ln=True)
     pdf.set_font("Arial", "", 12)
-    pdf.multi_cell(0, 8, call_record.translation_en or call_record.recognized_text or "No translation available.")
+    pdf.multi_cell(0, 8, sanitize_for_pdf(call_record.translation_en or call_record.recognized_text or "No translation available."))
     pdf.ln(5)
 
     pdf.set_font("Arial", "B", 14)
     pdf.cell(0, 10, "Agent Performance Summary:", ln=True)
     pdf.set_font("Arial", "", 12)
-    pdf.multi_cell(0, 8, call_record.Agent_performance_summary or "No feedback available.")
+    pdf.multi_cell(0, 8, sanitize_for_pdf(call_record.Agent_performance_summary or "No feedback available."))
 
     # Save to a temporary directory
     temp_dir = tempfile.mkdtemp()
@@ -437,7 +458,7 @@ def download_pdf(
         "Content-Disposition": f"attachment; filename={session_id}_report.pdf"
     }
     if username:
-        headers["username"] = str(username)
+        headers["username"] = str(username).encode('latin-1', 'ignore').decode('latin-1') # Ensure safe header
 
     # Return the PDF file response
     return FileResponse(
