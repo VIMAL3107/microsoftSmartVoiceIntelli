@@ -58,7 +58,7 @@ EMAIL_FROM = config.get("EMAIL_FROM")
 EMAIL_PASSWORD = config.get("EMAIL_PASSWORD")
 SMTP_SERVER = config.get("SMTP_SERVER", "smtp.gmail.com")
 SMTP_PORT = config.get("SMTP_PORT", 465)
-FRONTEND_URL = config.get("FRONTEND_URL", "http://localhost:8080")
+FRONTEND_URL = config.get("FRONTEND_URL", "https://microsoftsmartvoiceintelli.onrender.com")
 
 # License
 VALID_LICENSE_KEYS = config.get("VALID_LICENSE_KEYS", [])

@@ -124,7 +124,7 @@ def verify_license_file(license_file_path: str, current_ip: str):
 
         allowed_ip = payload.get("allowed_ip")
 
-        if allowed_ip != "*" and allowed_ip != current_ip:
+        if allowed_ip != current_ip:
             error_msg = f"IP {current_ip} not allowed by license (expected: {allowed_ip})"
             logger.error(error_msg)
             raise Exception(error_msg)
