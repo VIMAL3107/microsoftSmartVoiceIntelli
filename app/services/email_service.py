@@ -2,6 +2,7 @@
 import smtplib
 import os
 import logging
+import time
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
@@ -52,18 +53,25 @@ def send_report_email_with_attachment(to_email: str, subject: str, body: str, fi
     else:
         logger.warning(f"Attachment not found: {file_path}")
 
-    try:
-        logger.info(f"Connecting to SMTP server: {SMTP_SERVER}:{SMTP_PORT}")
-        if SMTP_PORT == 465:
-            server = smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT)
-        else:
-            server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
-            server.starttls()
-            
-        server.login(EMAIL_FROM, EMAIL_PASSWORD)
-        server.sendmail(EMAIL_FROM, to_email, msg.as_string())
-        server.quit()
-        logger.info(f"Report email sent to {to_email}")
-    except Exception as e:
-        logger.error(f"Failed to send report email via {SMTP_SERVER}:{SMTP_PORT}: {e}")
-        raise
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            logger.info(f"Connecting to SMTP server: {SMTP_SERVER}:{SMTP_PORT} (Attempt {attempt + 1}/{max_retries})")
+            if SMTP_PORT == 465:
+                server = smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT)
+            else:
+                server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=30)
+                server.starttls()
+                
+            server.login(EMAIL_FROM, EMAIL_PASSWORD)
+            server.sendmail(EMAIL_FROM, to_email, msg.as_string())
+            server.quit()
+            logger.info(f"Report email sent to {to_email}")
+            return
+        except Exception as e:
+            logger.warning(f"Attempt {attempt + 1} failed: {e}")
+            if attempt < max_retries - 1:
+                time.sleep(5)
+            else:
+                logger.error(f"Failed to send report email via {SMTP_SERVER}:{SMTP_PORT} after {max_retries} attempts: {e}")
+                raise
