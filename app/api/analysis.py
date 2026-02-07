@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File, 
 from fastapi.responses import JSONResponse, FileResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import func, cast, Date, extract, desc
+from pathlib import Path
 import shutil
 import os
 import tempfile
@@ -23,6 +24,13 @@ from app.schemas.analytics import CallAnalyticsRequest
 from app.services.connection_manager import manager
 
 import logging
+import logging
+import fitz
+import textwrap
+from fpdf import FPDF
+from app.models.analytics import PdfSummary
+from app.services.llm_service import openai_client, AOAI_MODEL, config
+from pydantic import BaseModel, EmailStr
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
@@ -174,5 +182,379 @@ async def analyze(
                 try: os.remove(p)
                 except: pass
 
-# Duplicate dashboard/call/download endpoints removed. 
-# They are implemented in main.py to verify full logic.
+# ---------------- DASHBOARD ----------------
+@router.get("/dashboard/")
+def get_dashboard(
+    user_id: str = Query(...),  # Require user_id in query string
+    db: Session = Depends(get_db),
+    username: str = Depends(check_active_session)
+):
+    now = datetime.utcnow()
+    today = date.today()
+    # Basic stats
+    num_calls = db.query(func.count(CallAnalytics.id)).filter(CallAnalytics.user_id == user_id).scalar() or 0
+    avg_time = db.query(func.avg(CallAnalytics.time_taken_sec)).filter(CallAnalytics.user_id == user_id).scalar() or 0
+    # Conversation feel distribution
+    conversation_status_counts = db.query(
+        CallAnalytics.conversation_feel, func.count(CallAnalytics.id)
+    ).filter(
+        CallAnalytics.user_id == user_id,
+        CallAnalytics.conversation_feel.in_(["Positive", "Negative", "Neutral"])
+    ).group_by(CallAnalytics.conversation_feel).all()
+    # Follow-up required
+    follow_up_required_count = db.query(func.count(CallAnalytics.id)).filter(
+        CallAnalytics.user_id == user_id,
+        CallAnalytics.FollowUpRequired == True
+    ).scalar() or 0
+    # Cross-sell attempts
+    cross_sell_attempts = db.query(func.count(CallAnalytics.id)).filter(
+        CallAnalytics.user_id == user_id,
+        CallAnalytics.CrossSellUpsellAttempts == True
+    ).scalar() or 0
+    # Upload counts
+    today_count = db.query(func.count(CallAnalytics.id)).filter(
+        CallAnalytics.user_id == user_id,
+        cast(CallAnalytics.created_at, Date) == today
+    ).scalar() or 0
+    month_count = db.query(func.count(CallAnalytics.id)).filter(
+        CallAnalytics.user_id == user_id,
+        extract("year", CallAnalytics.created_at) == now.year,
+        extract("month", CallAnalytics.created_at) == now.month
+    ).scalar() or 0
+    year_count = db.query(func.count(CallAnalytics.id)).filter(
+        CallAnalytics.user_id == user_id,
+        extract("year", CallAnalytics.created_at) == now.year
+    ).scalar() or 0
+    # CSAT distribution
+    total_csat_count = db.query(func.count(CallAnalytics.id)).filter(
+        CallAnalytics.user_id == user_id,
+        CallAnalytics.CsatPrediction.isnot(None)
+    ).scalar() or 0
+    csat_below_2_5 = db.query(func.count(CallAnalytics.id)).filter(
+        CallAnalytics.user_id == user_id,
+        CallAnalytics.CsatPrediction < 2.5
+    ).scalar() or 0
+    csat_2_5_to_4 = db.query(func.count(CallAnalytics.id)).filter(
+        CallAnalytics.user_id == user_id,
+        CallAnalytics.CsatPrediction >= 2.5,
+        CallAnalytics.CsatPrediction < 4
+    ).scalar() or 0
+    csat_4_to_5 = db.query(func.count(CallAnalytics.id)).filter(
+        CallAnalytics.user_id == user_id,
+        CallAnalytics.CsatPrediction >= 4
+    ).scalar() or 0
+    # Document listing
+    doc_list = db.query(
+        CallAnalytics.id,
+        CallAnalytics.created_at,
+        CallAnalytics.time_taken_sec,
+        CallAnalytics.conversation_feel,
+        CallAnalytics.session_id  # Add session_id to doc_list
+    ).filter(CallAnalytics.user_id == user_id).all()
+    docs = [
+        {
+            "id": id,
+            "session_id": session_id,  # Include session_id in response
+            "created_at": created_at.isoformat() if created_at else None,
+            "time_taken_sec": time_taken_sec,
+            "sentiment": conversation_feel
+        }
+        for id, created_at, time_taken_sec, conversation_feel, session_id in doc_list
+    ]
+    # Conversation feel dict
+    conversation_status_dict = {"Positive": 0, "Neutral": 0, "Negative": 0}
+    for feel, count in conversation_status_counts:
+        conversation_status_dict[feel] = count
+    result = {
+        "num_calls": num_calls,
+        "avg_time_taken": avg_time,
+        "conversation_status_counts": conversation_status_dict,
+        "follow_up_required_count": follow_up_required_count,
+        "upload_counts": {"today": today_count, "this_month": month_count, "this_year": year_count},
+        "doc_list": docs,
+        "cross_sell_attempts": cross_sell_attempts,
+        "csat_distribution_percent": {
+            "below_2_5": round((csat_below_2_5 / total_csat_count) * 100, 2) if total_csat_count else 0,
+            "from_2_5_to_4": round((csat_2_5_to_4 / total_csat_count) * 100, 2) if total_csat_count else 0,
+            "from_4_to_5": round((csat_4_to_5 / total_csat_count) * 100, 2) if total_csat_count else 0,
+            "total": total_csat_count
+        }
+    }
+    result["username"] = username
+    return JSONResponse(content=result)
+
+
+# ---------------- CALL DETAILS ----------------
+class CallAnalyticsRequest(BaseModel):
+    user_id: str
+    page: int = 1
+    page_size: int = 10
+    filter_by: Optional[str] = None
+    sort_by: Optional[str] = None
+
+@router.post("/callDetails/")
+def get_user_calls(
+    call_request: CallAnalyticsRequest,
+    db: Session = Depends(get_db),
+    username: str = Depends(check_active_session)
+):
+    user_id = call_request.user_id
+    page = max(call_request.page, 1)
+    page_size = max(min(call_request.page_size, 100), 1)
+    offset = (page - 1) * page_size
+    filter_by = call_request.filter_by
+    sort_by = call_request.sort_by
+
+    query = db.query(CallAnalytics).filter(CallAnalytics.user_id == user_id)
+    order_column = CallAnalytics.created_at.desc()
+
+    # --- Filtering ---
+    if filter_by:
+        try:
+            key, value = filter_by.split(":", 1)
+            if key == "conversation_feel":
+                query = query.filter(CallAnalytics.conversation_feel == value)
+            elif key == "follow_up_required":
+                query = query.filter(CallAnalytics.FollowUpRequired == (value.lower() == "true"))
+            elif key == "call_disposition":
+                query = query.filter(CallAnalytics.CallDisposition == value)
+            elif key == "created_at":
+                filter_date_obj = datetime.strptime(value, "%Y-%m-%d").date()
+                query = query.filter(cast(CallAnalytics.created_at, Date) == filter_date_obj)
+            elif key == "csat_range":
+                if value == "below_2_5":
+                    query = query.filter(CallAnalytics.CsatPrediction < 2.5)
+                elif value == "2_5_to_4":
+                    query = query.filter(CallAnalytics.CsatPrediction >= 2.5,
+                                         CallAnalytics.CsatPrediction < 4)
+                elif value == "4_to_5":
+                    query = query.filter(CallAnalytics.CsatPrediction >= 4)
+        except ValueError:
+            pass
+
+    # --- Sorting ---
+    if sort_by:
+        try:
+            field, direction = sort_by.split(":")
+            column_attr = getattr(CallAnalytics, field, None)
+            if column_attr is not None:
+                order_column = column_attr.asc() if direction.lower() == "asc" else column_attr.desc()
+        except ValueError:
+            pass
+
+    total_calls = query.count()
+    call_data = query.order_by(order_column).offset(offset).limit(page_size).all()
+
+    calls = [
+        {
+            "id": call.id,
+            "session_id": call.session_id,
+            "recognized_text": call.recognized_text,
+            "translation_en": call.translation_en,
+            "conversation_feel": call.conversation_feel,
+            "caller": call.caller,
+            "callee": call.callee,
+            "audio_quality": call.audio_quality,
+            "word_count": call.word_count,
+            "audio_duration": call.audio_duration,
+            "agent_improvement_areas": call.agent_improvement_areas,
+            "Agent_performance_summary": call.Agent_performance_summary,
+            "ScriptAdherenceScore": call.ScriptAdherenceScore,
+            "PolitenessProfessionalismScore": call.PolitenessProfessionalismScore,
+            "ResolutionEffectivenessScore": call.ResolutionEffectivenessScore,
+            "CsatPrediction": call.CsatPrediction,
+            "CallDisposition": call.CallDisposition,
+            "FollowUpRequired": call.FollowUpRequired,
+            "CrossSellUpsellAttempts": call.CrossSellUpsellAttempts,
+            "CrossSellUpsellDetails": call.CrossSellUpsellDetails,
+            "time_taken_sec": call.time_taken_sec,
+            "created_at": call.created_at
+        }
+        for call in call_data
+    ]
+
+    # --- Include username in the response ---
+    response_data = {
+        "total_records": total_calls,
+        "page": page,
+        "page_size": page_size,
+        "calls": calls,
+        "username": username
+    }
+
+    return response_data
+
+@router.get("/download/")
+def download_pdf(
+    session_id: str = Query(..., description="Session ID of the call to download"),
+    user_id: Optional[str] = Query(None, description="User ID requesting the download"),
+    db: Session = Depends(get_db),
+    username: str = Depends(check_active_session)
+):
+    # Query the record
+    query = db.query(CallAnalytics).filter(CallAnalytics.session_id == session_id)
+    if user_id:
+        query = query.filter(CallAnalytics.user_id == user_id)
+    
+    call_record = query.first()
+    if not call_record:
+        raise HTTPException(
+            status_code=404,
+            detail="Session not found or you don't have permission to access this session"
+        )
+    
+    # Create the PDF
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_auto_page_break(auto=True, margin=15)
+    pdf.set_font("Arial", "B", 16)
+    pdf.cell(0, 10, f"Call Report - Session ID: {session_id}", ln=True, align='C')
+    pdf.ln(10)
+
+    pdf.set_font("Arial", "B", 14)
+    pdf.cell(0, 10, "Translate:", ln=True)
+    pdf.set_font("Arial", "", 12)
+    pdf.multi_cell(0, 8, call_record.translation_en or call_record.recognized_text or "No translation available.")
+    pdf.ln(5)
+
+    pdf.set_font("Arial", "B", 14)
+    pdf.cell(0, 10, "Agent Performance Summary:", ln=True)
+    pdf.set_font("Arial", "", 12)
+    pdf.multi_cell(0, 8, call_record.Agent_performance_summary or "No feedback available.")
+
+    # Save to a temporary directory
+    temp_dir = tempfile.mkdtemp()
+    pdf_path = os.path.join(temp_dir, f"{session_id}_report.pdf")
+    pdf.output(pdf_path)
+
+    # Ensure file exists
+    if not Path(pdf_path).exists():
+        raise HTTPException(status_code=500, detail="Failed to generate PDF")
+
+    # Prepare safe headers
+    headers = {
+        "Content-Disposition": f"attachment; filename={session_id}_report.pdf"
+    }
+    if username:
+        headers["username"] = str(username)
+
+    # Return the PDF file response
+    return FileResponse(
+        path=pdf_path,
+        filename=f"{session_id}_report.pdf",
+        media_type="application/pdf",
+        headers=headers
+    )
+
+
+# --- PDF UPLOAD HELPERS ---
+def extract_text_from_pdf(file_path):
+    try:
+        doc = fitz.open(file_path)
+        text = ""
+        for page in doc:
+            text += page.get_text()
+        return text
+    except Exception as e:
+        logger.error("Error extracting text: %s", str(e))
+        return ""
+
+def PDF_Summarization(text: str, model: str = None) -> str:
+    """
+    Summarize given PDF text content using Azure OpenAI model from config.
+    """
+    logger.info("[Summary] Sending content to Azure OpenAI for summarization")
+
+    # Use model from config if not provided
+    if model is None:
+        model = config.get("AZURE_OPENAI_MODEL", "o4-mini")
+
+    prompt = (
+        "Please summarize the key points and important information from the following PDF content. "
+        "Focus on the main ideas, significant details, and any conclusions or outcomes mentioned:\n\n"
+        f"{text.strip()}"
+    )
+
+    try:
+        req = {
+            "model": model,
+            "messages": [{"role": "user", "content": prompt}],
+            "max_tokens": 1000,
+            "temperature": 0.2,
+        }
+
+        # Adjust temperature only if model is not O-series
+        if not model.lower().startswith("o4"):
+            try:
+                req["temperature"] = float(config.get("AZURE_OPENAI_TEMPERATURE", 0.2))
+            except Exception:
+                pass
+
+        t0 = time.time()
+        resp = openai_client.chat.completions.create(**req)
+        logger.info(
+            "Azure OpenAI completion done in %d ms (model=%s)",
+            int((time.time() - t0) * 1000),
+            model,
+        )
+
+        summary = resp.choices[0].message.content.strip()
+        logger.info("[Summary] Received summary from Azure OpenAI")
+        return summary
+
+    except Exception as e:
+        logger.warning("[Summary] Failed to summarize with Azure OpenAI: %s", str(e))
+        return text  # fallback if summarization fails
+
+
+def split_text_into_chunks(text: str, max_length: int = 300):
+    return textwrap.wrap(text, width=max_length, break_long_words=False, replace_whitespace=False)
+    
+# API endpoint
+@router.post("/upload_pdf/")
+async def upload_pdf(file: UploadFile = File(...),
+                     isProspectus : bool = Form(...),
+                     db: Session = Depends(get_db)):
+    try:
+        temp_dir = tempfile.mkdtemp()
+        file_name = f"{uuid.uuid4().hex}_{file.filename}"
+        file_path = os.path.join(temp_dir, file_name)
+
+        with open(file_path, "wb") as f_out:
+            f_out.write(await file.read())
+
+        text = extract_text_from_pdf(file_path)
+        if not text:
+            return JSONResponse(status_code=500, content={"error": "Failed to extract text from PDF"})
+
+        summary = PDF_Summarization(text=text)
+        
+        # NOTE: Vector store logic (FAISS) removed/commented as dependency missing in env
+        # if isProspectus :
+        #     chunks = split_text_into_chunks(summary, max_length=350)
+        #     # embeddings = embed_chunks(chunks)
+        #     # index = build_faiss_index(embeddings)
+        #     # faiss.write_index(index, "faiss_index.index")
+
+        # Save to SQLite
+        new_entry = PdfSummary(
+                id=str(uuid.uuid4()),
+                file_path=file_path,
+                original_text=text,
+                summary=summary,
+                created_date=datetime.utcnow()
+            )
+
+        db.add(new_entry)
+        db.commit()
+
+        return {
+            "file_path": file_path,
+            "created_date": new_entry.created_date.isoformat(),
+            "text": text,
+            "summary": summary
+        }
+
+    except Exception as e:
+        logger.error("Failed to process PDF upload: %s", str(e))
+        return JSONResponse(status_code=500, content={"error": "Internal server error", "detail": str(e)})

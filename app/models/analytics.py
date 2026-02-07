@@ -50,3 +50,11 @@ class CallSession(Base):
     session_id = Column(String(36), index=True, unique=True)
     user_id = Column(String(36), index=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+class PdfSummary(Base):
+    __tablename__ = "pdf_summary"
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    file_path = Column(String(255), nullable=False)
+    original_text = Column(Text, nullable=False)
+    summary = Column(Text, nullable=False)
+    created_date = Column(DateTime, default=datetime.utcnow)
