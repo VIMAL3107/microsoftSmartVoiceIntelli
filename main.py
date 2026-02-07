@@ -12,7 +12,8 @@ from openai import AzureOpenAI
 import concurrent.futures
 import threading
 from fpdf import FPDF
-from sqlalchemy import create_engine, Column, Integer, String, Float, Boolean, JSON, Text, DateTime, extract, func, ForeignKey, Date, cast
+from sqlalchemy import create_engine, Column, Integer, String, Float, Boolean, JSON, Text, DateTime, extract, func, ForeignKey, Date, cast, text
+import pandas as pd
 from datetime import datetime, timedelta, timezone, date
 from pydantic import BaseModel, EmailStr
 from jose import JWTError, jwt
@@ -247,6 +248,7 @@ class CallAnalytics(Base):
     word_count = Column(Integer, default=0)
     audio_duration = Column(Float, default=0.0)
     created_at = Column(DateTime, default=datetime.utcnow)
+    is_reported = Column(Boolean, default=False)
 
 # UserFeedback Model
 class UserFeedback(Base):
@@ -715,67 +717,7 @@ def debug_email_connection():
         
     return results
 
-@app.post("/admin/daily-report")
-def trigger_daily_report(
-    to_email: EmailStr,
-    target_date: Optional[date] = None,
-    secret: str = Query(..., description="Admin Secret"),
-    db: OrmSession = Depends(get_db)
-):
-    """
-    Generates a daily report for the specified date (default: today) and emails it.
-    """
-    if secret != "INTELLICORE-SECRET":
-        raise HTTPException(status_code=403, detail="Unauthorized")
 
-    if not target_date:
-        target_date = datetime.utcnow().date()
-        
-    logger.info(f"Generating daily report for {target_date}")
-
-    # 1. Summary Metrics
-    # We cast created_at to date to compare
-    total_calls = db.query(CallAnalytics).filter(func.date(CallAnalytics.created_at) == target_date).count()
-    
-    # Example: Average Sentiment (if you have numeric mapping, otherwise just count)
-    # For now, just total calls is good enough for step 1.
-
-    # 2. Export Excel
-    filename = f"Daily_Report_{target_date}.xlsx"
-    try:
-        export_call_analytics_to_excel(db, output_file=filename, target_date=target_date)
-    except Exception as e:
-        logger.error(f"Excel export failed: {e}")
-        raise HTTPException(status_code=500, detail=f"Excel export failed: {e}")
-
-    # 3. Send Email
-    subject = f"Daily Call Analytics Report - {target_date}"
-    body = f"""
-    Hello,
-
-    Here is the daily summary for {target_date}.
-
-    -----------------------------------
-    Total Calls Analyzed: {total_calls}
-    -----------------------------------
-
-    Please find the detailed Excel report attached.
-
-    Best regards,
-    Voice Analytics System
-    """
-    
-    try:
-        send_report_email_with_attachment(to_email, subject, body, filename)
-    except Exception as e:
-        logger.error(f"Email sending failed: {e}")
-        raise HTTPException(status_code=500, detail=f"Email sending failed: {e}")
-
-    return {
-        "message": f"Daily report for {target_date} sent to {to_email}",
-        "metrics": {"total_calls": total_calls},
-        "file": filename
-    }
 
 # ----------- SCHEDULER -----------
 def run_scheduler_loop():
@@ -1296,7 +1238,7 @@ def get_dashboard(
     }
     result["username"] = username
     return JSONResponse(content=result)
-
+y
 
 # ---------------- CALL DETAILS ----------------
 class CallAnalyticsRequest(BaseModel):
@@ -1458,8 +1400,6 @@ def download_pdf(
         media_type="application/pdf",
         headers=headers
     )
-
-
 @app.post("/send-email/")
 async def send_email(
     email_data: EmailRequest,
