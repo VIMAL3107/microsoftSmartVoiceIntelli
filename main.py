@@ -1297,6 +1297,17 @@ def get_dashboard(
     result["username"] = username
     return JSONResponse(content=result)
 
+@app.get("/cloud/dashboard/")
+def get_dashboard_alias(
+    user_id: str = Query(...),
+    db: OrmSession = Depends(get_db),
+    username: str = Depends(check_active_session)
+):
+    """
+    Alias for /dashboard/ to support legacy or cloud-prefixed frontend requests.
+    """
+    return get_dashboard(user_id=user_id, db=db, username=username)
+
 # ---------------- CALL DETAILS ----------------
 class CallAnalyticsRequest(BaseModel):
     user_id: str
