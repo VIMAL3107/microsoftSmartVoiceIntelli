@@ -18,7 +18,7 @@ ENV/
 .env
 
 # Database
-*.db
+# *.db
 *.sqlite3
 
 # Logs and Reports
