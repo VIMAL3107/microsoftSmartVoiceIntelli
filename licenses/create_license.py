@@ -11,7 +11,7 @@ PRIVATE_KEY_FILE = "licenses/private.pem"  # You need this file to sign!
 LICENSE_FILENAME = "licenses/new_user_license.bin"
 
 LICENSE_DATA = {
-    "allowed_ip": "*", # Allow ANY IP address (Recommended for testing)
+    "allowed_ip": "216.24.57.251", # Allow ANY IP address (Recommended for testing)
     "start_date": datetime.datetime.utcnow().isoformat() + "Z", # "2023-10-16T12:00:00Z"
     "end_date": "2026-12-31T23:59:59Z"   # Adjust validity here
 }

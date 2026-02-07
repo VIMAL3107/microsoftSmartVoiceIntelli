@@ -63,9 +63,11 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
         send_verification_email(user.email, token)
     except Exception as e:
         logger.error(f"Error sending verification email: {e}")
-        # Dont block registration if email fails? Or maybe raise 500.
-        # usually better to raise so user knows
-        raise HTTPException(status_code=500, detail="Failed to send verification email.")
+        # Don't block registration if email fails.
+        # Ideally, we should have a way to resend verification email later.
+        pass
+        
+    return {"message": f"User {user.username} registered. Please check email to verify."}
         
     return {"message": f"User {user.username} registered. Check mail."}
 
