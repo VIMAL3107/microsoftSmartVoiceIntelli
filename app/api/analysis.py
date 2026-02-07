@@ -431,6 +431,14 @@ def download_pdf(
     pdf.set_auto_page_break(auto=True, margin=15)
     pdf.set_font("Arial", "B", 16)
     pdf.cell(0, 10, sanitize_for_pdf(f"Call Report - Session ID: {session_id}"), ln=True, align='C')
+    
+    # Add Username
+    if username:
+        pdf.set_font("Arial", "I", 10)
+        pdf.cell(0, 5, sanitize_for_pdf(f"User: {username}"), ln=True, align='C')
+
+    logger.info(f"PDF download initiated for session {session_id} by user {username}")
+
     pdf.ln(10)
 
     pdf.set_font("Arial", "B", 14)
