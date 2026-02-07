@@ -29,7 +29,8 @@ import fitz
 import textwrap
 from fpdf import FPDF
 from app.models.analytics import PdfSummary
-from app.services.llm_service import openai_client, AOAI_MODEL, config
+from app.services.llm_service import openai_client
+from app.core.config import AOAI_MODEL, config
 from pydantic import BaseModel, EmailStr
 logger = logging.getLogger(__name__)
 
