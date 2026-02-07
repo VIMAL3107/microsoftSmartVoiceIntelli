@@ -40,7 +40,7 @@ from cryptography.fernet import Fernet
 load_dotenv()
 
 # FERNET_KEY for decrypting config.enc
-FERNET_KEY = os.getenv("FERNET_KEY", "AOe-iLJE4Nn2-nUdPKNPvtqFPxVanxgVSypJAhsMyoQ=")
+FERNET_KEY = os.getenv("FERNET_KEY")
 if isinstance(FERNET_KEY, str):
     FERNET_KEY = FERNET_KEY.encode()
 fernet = Fernet(FERNET_KEY)
@@ -676,42 +676,44 @@ def extend_license(new_expiry: str, secret: str = Form(...)):
         raise HTTPException(status_code=404, detail="license.json not found")
 
 # ----------- EMAIL SENDING FUNCTION -----------
-def send_verification_email(to_email: str, token: str):
-    verify_link = f"{FRONTEND_URL}/verify-email?token={token}"
-    subject = "Verify your email"
-    body = f"Click this link to verify your email: {verify_link}"
-    msg = MIMEText(body)
-    msg["Subject"] = subject
-    msg["From"] = EMAIL_FROM
-    msg["To"] = to_email
+from app.services.email_service import send_verification_email, send_report_email_with_attachment
 
-    with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
-        server.starttls()
-        server.login(EMAIL_FROM, EMAIL_PASSWORD)
-        server.sendmail(EMAIL_FROM, to_email, msg.as_string())
-
-def send_report_email_with_attachment(to_email: str, subject: str, body: str, file_path: str):
-    msg = MIMEMultipart()
-    msg["Subject"] = subject
-    msg["From"] = EMAIL_FROM
-    msg["To"] = to_email
+@app.get("/debug/email")
+def debug_email_connection():
+    """Debug endpoint to test SMTP connection and Auth"""
+    import socket
+    results = {
+        "SMTP_SERVER": SMTP_SERVER,
+        "SMTP_PORT": SMTP_PORT,
+        "EMAIL_FROM": EMAIL_FROM,
+        "DNS_Resovled": False,
+        "Connection_Success": False,
+        "Auth_Success": False,
+        "Error": None
+    }
     
-    # Attach body
-    msg.attach(MIMEText(body, "plain"))
-    
-    # Attach file
-    if os.path.exists(file_path):
-        with open(file_path, "rb") as f:
-            part = MIMEApplication(f.read(), Name=os.path.basename(file_path))
-        part['Content-Disposition'] = f'attachment; filename="{os.path.basename(file_path)}"'
-        msg.attach(part)
-    else:
-        logger.warning(f"Attachment not found: {file_path}")
-
-    with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+    try:
+        # 1. DNS Resolution
+        socket.gethostbyname(SMTP_SERVER)
+        results["DNS_Resovled"] = True
+        
+        # 2. Connection
+        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=10)
+        server.connect(SMTP_SERVER, SMTP_PORT)
+        server.ehlo()
         server.starttls()
+        server.ehlo()
+        results["Connection_Success"] = True
+        
+        # 3. Auth
         server.login(EMAIL_FROM, EMAIL_PASSWORD)
-        server.sendmail(EMAIL_FROM, to_email, msg.as_string())
+        results["Auth_Success"] = True
+        server.quit()
+        
+    except Exception as e:
+        results["Error"] = str(e)
+        
+    return results
 
 @app.post("/admin/daily-report")
 def trigger_daily_report(

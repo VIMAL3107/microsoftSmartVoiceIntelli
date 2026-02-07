@@ -3,12 +3,15 @@ import smtplib
 import os
 import logging
 import time
+import socket
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
 from app.core.config import EMAIL_FROM, EMAIL_PASSWORD, SMTP_SERVER, SMTP_PORT, FRONTEND_URL
 
 logger = logging.getLogger(__name__)
+
+import socket
 
 def send_verification_email(to_email: str, token: str):
     verify_link = f"{FRONTEND_URL}/verify-email?token={token}"
@@ -20,17 +23,28 @@ def send_verification_email(to_email: str, token: str):
     msg["To"] = to_email
 
     try:
-        logger.info(f"Connecting to SMTP server: {SMTP_SERVER}:{SMTP_PORT}")
+        logger.info(f"Connecting to SMTP server: {SMTP_SERVER}:{SMTP_PORT} (IPv4)")
+        # Force IPv4 Connection
         if SMTP_PORT == 465:
-            server = smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT)
+            context = smtplib.ssl.create_default_context()
+            server = smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT, context=context)
         else:
             server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+            server.connect(SMTP_SERVER, SMTP_PORT) # Explicit connect
+            server.ehlo()
             server.starttls()
+            server.ehlo()
             
         server.login(EMAIL_FROM, EMAIL_PASSWORD)
         server.sendmail(EMAIL_FROM, to_email, msg.as_string())
         server.quit()
         logger.info(f"Verification email sent to {to_email}")
+    except smtplib.SMTPAuthenticationError:
+        logger.error("SMTP Auth Error: Check EMAIL_FROM and EMAIL_PASSWORD (App Password).")
+        raise
+    except socket.gaierror:
+         logger.error("SMTP DNS Error: Could not resolve 'smtp.gmail.com'. Check Internet.")
+         raise
     except Exception as e:
         logger.error(f"Failed to send verification email via {SMTP_SERVER}:{SMTP_PORT}: {e}")
         raise
