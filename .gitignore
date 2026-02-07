@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environment
+.venv/
+venv/
+ENV/
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Environment Variables
+.env
+
+# Database
+*.db
+*.sqlite3
+
+# Logs and Reports
+*.log
+Batch_Report_*.xlsx
+Call_Analytics.xlsx
