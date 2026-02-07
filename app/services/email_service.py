@@ -23,16 +23,21 @@ def send_verification_email(to_email: str, token: str):
     msg["To"] = to_email
 
     try:
-        logger.info(f"Connecting to SMTP server: {SMTP_SERVER}:{SMTP_PORT} (IPv4)")
-        # Force IPv4 Connection
+        logger.info(f"Connecting to SMTP server: {SMTP_SERVER}:{SMTP_PORT}")
+        # Force SSL context
+        context = smtplib.ssl.create_default_context()
+        
         if SMTP_PORT == 465:
-            context = smtplib.ssl.create_default_context()
             server = smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT, context=context)
         else:
-            server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
-            server.connect(SMTP_SERVER, SMTP_PORT) # Explicit connect
+            server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=15) # Longer timeout
+            try:
+                server.connect(SMTP_SERVER, SMTP_PORT)
+            except socket.error as e:
+                logger.error(f"Failed to connect to {SMTP_SERVER}:{SMTP_PORT}. NETWORK ERROR. Try Port 465.")
+                raise
             server.ehlo()
-            server.starttls()
+            server.starttls(context=context)
             server.ehlo()
             
         server.login(EMAIL_FROM, EMAIL_PASSWORD)
@@ -40,13 +45,10 @@ def send_verification_email(to_email: str, token: str):
         server.quit()
         logger.info(f"Verification email sent to {to_email}")
     except smtplib.SMTPAuthenticationError:
-        logger.error("SMTP Auth Error: Check EMAIL_FROM and EMAIL_PASSWORD (App Password).")
+        logger.error("SMTP Auth Error: Check EMAIL_FROM and EMAIL_PASSWORD.")
         raise
-    except socket.gaierror:
-         logger.error("SMTP DNS Error: Could not resolve 'smtp.gmail.com'. Check Internet.")
-         raise
     except Exception as e:
-        logger.error(f"Failed to send verification email via {SMTP_SERVER}:{SMTP_PORT}: {e}")
+        logger.error(f"Failed to send email: {e}")
         raise
 
 def send_report_email_with_attachment(to_email: str, subject: str, body: str, file_path: str):
@@ -71,11 +73,16 @@ def send_report_email_with_attachment(to_email: str, subject: str, body: str, fi
     for attempt in range(max_retries):
         try:
             logger.info(f"Connecting to SMTP server: {SMTP_SERVER}:{SMTP_PORT} (Attempt {attempt + 1}/{max_retries})")
+            context = smtplib.ssl.create_default_context()
+            
             if SMTP_PORT == 465:
-                server = smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT)
+                server = smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT, context=context)
             else:
                 server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=30)
-                server.starttls()
+                server.connect(SMTP_SERVER, SMTP_PORT)
+                server.ehlo()
+                server.starttls(context=context)
+                server.ehlo()
                 
             server.login(EMAIL_FROM, EMAIL_PASSWORD)
             server.sendmail(EMAIL_FROM, to_email, msg.as_string())
