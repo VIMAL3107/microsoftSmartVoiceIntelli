@@ -15,22 +15,30 @@ from app.core.config import SPEECH_KEY, SPEECH_REGION, TARGET_LANG, AUTODETECT_L
 logger = logging.getLogger(__name__)
 
 def _resolve_ffmpeg_bin() -> str:
-    # 1. Check local bin folder (embedded)
-    local_bin = os.path.join(os.getcwd(), "bin", "ffmpeg.exe")
-    if os.path.exists(local_bin):
-        return local_bin
+    # 1. Check environment variable
+    env_bin = os.getenv("FFMPEG_BIN", "").strip()
+    if env_bin:
+        # If user explicitly set it, return it (check existence if absolute path logic desired, but adhering to env var is safe)
+        return env_bin
 
-    # 2. Check env var and system path
-    for c in [os.getenv("FFMPEG_BIN","").strip(), "ffmpeg", "/usr/bin/ffmpeg"]:
-        if not c: continue
-        try:
-            subprocess.run([c, "-version"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
-            return c
-        except Exception:
-            pass
-            
-    # Warning instead of raising here, let caller decide or raise later
-    logger.warning("FFmpeg not found. Helper functions might fail.")
+    # 2. Check system PATH (Recommended for Render/Production)
+    if shutil.which("ffmpeg"):
+        return "ffmpeg"
+
+    # 3. Fallback to local bin if system ffmpeg is missing (Development/Windows)
+    # Only check for ffmpeg.exe if we are on Windows
+    if os.name == 'nt':
+        local_bin = os.path.join(os.getcwd(), "bin", "ffmpeg.exe")
+        if os.path.exists(local_bin):
+            return local_bin
+    
+    # On Linux/Mac, if you bundled a binary in bin/ffmpeg, check for that
+    else:
+        local_bin = os.path.join(os.getcwd(), "bin", "ffmpeg")
+        if os.path.exists(local_bin) and os.access(local_bin, os.X_OK):
+            return local_bin
+
+    logger.warning("FFmpeg not found in PATH or local bin. Defaulting to 'ffmpeg' which may fail.")
     return "ffmpeg"
 
 def _wav_duration(path_wav: str) -> float:

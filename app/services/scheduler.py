@@ -3,7 +3,7 @@ import time
 import logging
 import threading
 from datetime import datetime
-from app.core.config import load_encrypted_config, REPORT_SCHEDULE_ENABLED, REPORT_INTERVAL_MINUTES, REPORT_EMAIL_TO, REPORT_DAILY_TIME
+from app.core.config import REPORT_SCHEDULE_ENABLED, REPORT_INTERVAL_MINUTES, REPORT_EMAIL_TO, REPORT_DAILY_TIME
 from app.core.database import get_db
 from app.api.reports import trigger_batch_report 
 
@@ -34,13 +34,8 @@ def run_scheduler_loop():
 
     while True:
         try:
-            # Re-load config to pick up changes without restarting
+            # Config reloading removed as we are moving away from config.enc
             t_cfg = {}
-            try:
-                current_cfg = load_encrypted_config("config.enc")
-                t_cfg = current_cfg.get("REPORT_SCHEDULE", {})
-            except Exception:
-                pass # Use defaults
 
             # Fallback to Environ Variables/Global Config
             s_enabled = t_cfg.get("enabled", REPORT_SCHEDULE_ENABLED)
