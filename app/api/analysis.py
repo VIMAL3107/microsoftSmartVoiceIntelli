@@ -30,7 +30,7 @@ import textwrap
 from fpdf import FPDF
 from app.models.analytics import PdfSummary
 from app.services.llm_service import openai_client
-from app.core.config import AOAI_MODEL, config
+from app.core.config import AOAI_MODEL
 from pydantic import BaseModel, EmailStr
 logger = logging.getLogger(__name__)
 
@@ -497,7 +497,7 @@ def PDF_Summarization(text: str, model: str = None) -> str:
 
     # Use model from config if not provided
     if model is None:
-        model = config.get("AZURE_OPENAI_MODEL", "o4-mini")
+        model = AOAI_MODEL or "o4-mini"
 
     prompt = (
         "Please summarize the key points and important information from the following PDF content. "
