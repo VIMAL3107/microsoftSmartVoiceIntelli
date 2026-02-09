@@ -10,7 +10,7 @@ import contextvars
 
 from app.core.config import LOG_LEVEL, AUTODETECT_LANGS, TARGET_LANG
 from app.core.database import Base, engine
-from app.api import auth, analysis, reports, feedback, email
+from app.api import auth, analysis, reports, feedback, email, chat
 from app.services.scheduler import start_scheduler
 from app.services.security import check_license
 
@@ -19,16 +19,34 @@ check_license()
 
 
 # Logging Setup
+from logging.handlers import TimedRotatingFileHandler
+
+if not os.path.exists("logs"):
+    os.makedirs("logs")
+
 request_id_var = contextvars.ContextVar("request_id", default="-")
 class ReqIdFilter(logging.Filter):
     def filter(self, record): record.request_id = request_id_var.get("-"); return True
 
+log_formatter = logging.Formatter("%(asctime)s %(levelname)s [%(request_id)s] %(name)s: %(message)s")
+
+# File Handler (Rotates daily at midnight, keeps 30 days)
+file_handler = TimedRotatingFileHandler("logs/app.log", when="midnight", interval=1, backupCount=30)
+file_handler.setFormatter(log_formatter)
+file_handler.addFilter(ReqIdFilter())
+
+# Console Handler
+console_handler = logging.StreamHandler()
+console_handler.setFormatter(log_formatter)
+console_handler.addFilter(ReqIdFilter())
+
+# Configure Root Logger
+# Use handlers list so we have both file and console logging
 logging.basicConfig(
     level=getattr(logging, LOG_LEVEL, logging.INFO),
-    format="%(asctime)s %(levelname)s [%(request_id)s] %(name)s: %(message)s"
+    handlers=[file_handler, console_handler]
 )
-for h in logging.getLogger().handlers:
-    h.addFilter(ReqIdFilter())
+
 logger = logging.getLogger("speech-autodetect-llm")
 
 # Create Tables
@@ -84,6 +102,7 @@ app.include_router(analysis.router)
 app.include_router(reports.router)
 app.include_router(feedback.router)
 app.include_router(email.router)
+app.include_router(chat.router)
 
 if __name__ == "__main__":
     import uvicorn

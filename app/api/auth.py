@@ -44,32 +44,29 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Username or email already registered")
         
     hashed_pwd = hash_password(user.password)
-    token = str(uuid.uuid4())
-    expiry = datetime.utcnow() + timedelta(hours=24)
+    # token = str(uuid.uuid4())
+    # expiry = datetime.utcnow() + timedelta(hours=24)
     
     new_user = User(
         username=user.username,
         email=user.email,
         password=hashed_pwd,
-        is_email_verified=True, # Auto-verify for testing since email is broken
-        email_verification_token=token,
-        token_expiry=expiry
+        is_email_verified=True, 
+        # email_verification_token=token,
+        # token_expiry=expiry
     )
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
     
-    try:
-        send_verification_email(user.email, token)
-    except Exception as e:
-        logger.error(f"Error sending verification email: {e}")
-        # Don't block registration if email fails.
-        # Ideally, we should have a way to resend verification email later.
-        pass
+    # Email sending removed as per request
+    # try:
+    #     send_verification_email(user.email, token)
+    # except Exception as e:
+    #     logger.error(f"Error sending verification email: {e}")
+    #     pass
         
-    return {"message": f"User {user.username} registered. Please check email to verify."}
-        
-    return {"message": f"User {user.username} registered. Check mail."}
+    return {"message": f"User {user.username} registered successfully."}
 
 @router.get("/verify-email")
 def verify_email(token: str, db: Session = Depends(get_db)):

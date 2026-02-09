@@ -123,8 +123,8 @@ def verify_license_file(license_file_path: str, current_ip: str):
             raise Exception(error_msg)
 
         allowed_ip = payload.get("allowed_ip")
-
-        if allowed_ip != current_ip:
+       #if allowed_ip != current_ip:
+        if allowed_ip != "*" and allowed_ip != current_ip:
             error_msg = f"IP {current_ip} not allowed by license (expected: {allowed_ip})"
             logger.error(error_msg)
             raise Exception(error_msg)
@@ -138,4 +138,9 @@ def verify_license_file(license_file_path: str, current_ip: str):
 
 def verify_user_license(username: str, client_ip: str):
     license_file = LICENSE_DIR / f"{username}_license.bin"
+    return verify_license_file(str(license_file), client_ip)
+
+
+def verify_admin_license(client_ip: str):
+    license_file = LICENSE_DIR / "admin_license.bin"
     return verify_license_file(str(license_file), client_ip)

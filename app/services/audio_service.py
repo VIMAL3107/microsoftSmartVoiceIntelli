@@ -15,13 +15,20 @@ from app.core.config import SPEECH_KEY, SPEECH_REGION, TARGET_LANG, AUTODETECT_L
 logger = logging.getLogger(__name__)
 
 def _resolve_ffmpeg_bin() -> str:
-    for c in [os.getenv("FFMPEG_BIN","").strip(), "/usr/bin/ffmpeg", "ffmpeg"]:
+    # 1. Check local bin folder (embedded)
+    local_bin = os.path.join(os.getcwd(), "bin", "ffmpeg.exe")
+    if os.path.exists(local_bin):
+        return local_bin
+
+    # 2. Check env var and system path
+    for c in [os.getenv("FFMPEG_BIN","").strip(), "ffmpeg", "/usr/bin/ffmpeg"]:
         if not c: continue
         try:
             subprocess.run([c, "-version"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
             return c
         except Exception:
             pass
+            
     # Warning instead of raising here, let caller decide or raise later
     logger.warning("FFmpeg not found. Helper functions might fail.")
     return "ffmpeg"
@@ -51,7 +58,15 @@ def convert_to_wav_any(input_path: str) -> str:
         out_wav
     ]
     t0 = time.time()
-    proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    try:
+        proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    except FileNotFoundError:
+        if input_path.lower().endswith(".wav"):
+             logger.warning("FFmpeg not found (WinError 2), but input is WAV. Attempting to use directly.")
+             shutil.copy2(input_path, out_wav)
+             return out_wav
+        logger.error("FFmpeg executable not found. Command: %s", cmd)
+        raise HTTPException(500, "Server Configuration Error: FFmpeg is not installed or not found in system PATH.")
     if proc.returncode != 0 or not os.path.exists(out_wav):
         err = proc.stderr.decode(errors="ignore")[-800:]
         logger.error("FFmpeg failed rc=%s tail=%s", proc.returncode, err)
