@@ -35,6 +35,8 @@ class CallAnalytics(Base):
     word_count = Column(Integer, default=0)
     audio_duration = Column(Float, default=0.0)
     created_at = Column(DateTime, default=datetime.utcnow)
+    file_name = Column(String(255))
+    feedback = Column(Text)
     is_reported = Column(Boolean, default=False)
 
 class UserFeedback(Base):
