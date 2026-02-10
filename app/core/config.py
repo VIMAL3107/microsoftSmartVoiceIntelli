@@ -3,7 +3,7 @@ import os
 import json
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(override=True)
 
 # General
 # Prioritize environment variables, provide sensible defaults
