@@ -16,7 +16,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 60))
 SPEECH_KEY = os.getenv("AZURE_SPEECH_KEY", "").strip()
 SPEECH_REGION = os.getenv("AZURE_SPEECH_REGION", "").strip()
 TARGET_LANG = os.getenv("TARGET_LANG", "en").strip()
-AUTODETECT_LANGS_RAW = os.getenv("AUTODETECT_LANGS", "en-US,ta-IN,hi-IN,te-IN,kn-IN").strip()
+AUTODETECT_LANGS_RAW = os.getenv("AUTODETECT_LANGS", "en-US,ta-IN,hi-IN,zh-SG,zh-CN").strip()
 AUTODETECT_LANGS = [l.strip() for l in AUTODETECT_LANGS_RAW.split(",") if l.strip()][:4]
 
 if not SPEECH_KEY or not SPEECH_REGION:
