@@ -1,0 +1,137 @@
+2026-02-09 14:55:07,435 INFO [-] app.services.scheduler: SCHEDULER: Started.
+2026-02-09 14:55:07,437 INFO [-] app.services.scheduler: SCHEDULER: Sleeping for 10.0 minutes...
+2026-02-09 18:15:46,856 INFO [-] app.services.scheduler: SCHEDULER: Started.
+2026-02-09 18:16:30,917 INFO [-] app.services.scheduler: SCHEDULER: Started.
+2026-02-09 18:16:39,223 INFO [61cde354ef3e] speech-autodetect-llm: REQ done in 2 ms
+2026-02-09 18:16:49,225 INFO [9c4c5c5de50a] speech-autodetect-llm: REQ done in 3 ms
+2026-02-09 18:16:49,588 INFO [297d30d2617b] speech-autodetect-llm: REQ done in 82 ms
+2026-02-09 18:18:55,865 INFO [ca1d9c052cb5] speech-autodetect-llm: REQ done in 292 ms
+2026-02-09 18:24:05,447 INFO [-] app.services.scheduler: SCHEDULER: Started.
+2026-02-09 18:24:29,204 INFO [-] app.services.scheduler: SCHEDULER: Started.
+2026-02-09 18:28:22,876 INFO [-] app.services.scheduler: SCHEDULER: Started.
+2026-02-09 18:28:59,786 INFO [-] app.services.scheduler: SCHEDULER: Started.
+2026-02-09 18:39:25,974 INFO [-] app.services.scheduler: SCHEDULER: Started.
+2026-02-09 18:41:24,184 INFO [-] app.services.scheduler: SCHEDULER: Started.
+2026-02-09 18:59:43,261 INFO [73b73743dfab] speech-autodetect-llm: REQ done in 2 ms
+2026-02-09 18:59:43,458 INFO [685c3aa06a31] speech-autodetect-llm: REQ done in 77 ms
+2026-02-09 18:59:43,508 INFO [-] app.services.scheduler: SCHEDULER: Started.
+2026-02-09 19:00:15,732 INFO [9e2d9c524bde] speech-autodetect-llm: REQ done in 256 ms
+2026-02-09 19:00:43,726 INFO [6381e27b9936] app.api.reports: Generating daily report for 2026-02-09
+2026-02-09 19:00:43,774 WARNING [6381e27b9936] app.services.excel_service: No data found in 'call_analytics' table to export.
+2026-02-09 19:00:45,763 INFO [6381e27b9936] app.services.excel_service: Successfully exported call analytics to Daily_Report_2026-02-09.xlsx
+2026-02-09 19:00:45,838 INFO [6381e27b9936] app.services.email_service: Connecting to SMTP server: smtp.gmail.com:587
+2026-02-09 19:00:48,819 WARNING [6381e27b9936] app.services.email_service: Failed to send report via port 587: 'NoneType' object has no attribute 'encode'
+2026-02-09 19:00:48,820 INFO [6381e27b9936] app.services.email_service: Connecting to SMTP server: smtp.gmail.com:465
+2026-02-09 19:00:50,305 WARNING [6381e27b9936] app.services.email_service: Failed to send report via port 465: 'NoneType' object has no attribute 'encode'
+2026-02-09 19:00:50,306 ERROR [6381e27b9936] app.services.email_service: All report email attempts failed.
+2026-02-09 19:00:50,309 INFO [6381e27b9936] speech-autodetect-llm: REQ done in 6606 ms
+2026-02-09 19:01:53,600 INFO [34df51ef39c0] app.services.audio_service: FFmpeg convert ok (505 ms)
+2026-02-09 19:01:53,727 INFO [34df51ef39c0] app.services.audio_service: FFmpeg convert ok (104 ms)
+2026-02-09 19:01:53,833 INFO [34df51ef39c0] app.services.audio_service: FFmpeg convert ok (106 ms)
+2026-02-09 19:01:53,940 INFO [34df51ef39c0] app.services.audio_service: FFmpeg convert ok (106 ms)
+2026-02-09 19:01:54,069 INFO [34df51ef39c0] app.services.audio_service: FFmpeg convert ok (128 ms)
+2026-02-09 19:01:54,181 INFO [34df51ef39c0] app.services.audio_service: FFmpeg convert ok (112 ms)
+2026-02-09 19:01:54,184 ERROR [34df51ef39c0] app.services.audio_service: Failed to create SpeechTranslationConfig. Verify SPEECH_KEY and SPEECH_REGION. Error: 5
+2026-02-09 19:01:54,191 INFO [34df51ef39c0] speech-autodetect-llm: REQ done in 1139 ms
+2026-02-09 19:02:00,074 INFO [1ba14c628fbd] app.services.audio_service: FFmpeg convert ok (270 ms)
+2026-02-09 19:02:00,248 INFO [1ba14c628fbd] app.services.audio_service: FFmpeg convert ok (136 ms)
+2026-02-09 19:02:00,390 INFO [1ba14c628fbd] app.services.audio_service: FFmpeg convert ok (141 ms)
+2026-02-09 19:02:00,556 INFO [1ba14c628fbd] app.services.audio_service: FFmpeg convert ok (166 ms)
+2026-02-09 19:02:00,734 INFO [1ba14c628fbd] app.services.audio_service: FFmpeg convert ok (176 ms)
+2026-02-09 19:02:00,838 INFO [1ba14c628fbd] app.services.audio_service: FFmpeg convert ok (104 ms)
+2026-02-09 19:02:00,839 ERROR [1ba14c628fbd] app.services.audio_service: Failed to create SpeechTranslationConfig. Verify SPEECH_KEY and SPEECH_REGION. Error: 5
+2026-02-09 19:02:00,843 INFO [1ba14c628fbd] speech-autodetect-llm: REQ done in 1079 ms
+2026-02-09 19:03:54,375 INFO [4284e4f21222] app.services.audio_service: FFmpeg convert ok (297 ms)
+2026-02-09 19:03:54,481 INFO [4284e4f21222] app.services.audio_service: FFmpeg convert ok (70 ms)
+2026-02-09 19:03:54,610 INFO [4284e4f21222] app.services.audio_service: FFmpeg convert ok (129 ms)
+2026-02-09 19:03:54,784 INFO [4284e4f21222] app.services.audio_service: FFmpeg convert ok (173 ms)
+2026-02-09 19:03:54,989 INFO [4284e4f21222] app.services.audio_service: FFmpeg convert ok (204 ms)
+2026-02-09 19:03:55,166 INFO [4284e4f21222] app.services.audio_service: FFmpeg convert ok (176 ms)
+2026-02-09 19:03:55,167 ERROR [4284e4f21222] app.services.audio_service: Failed to create SpeechTranslationConfig. Verify SPEECH_KEY and SPEECH_REGION. Error: 5
+2026-02-09 19:03:55,170 INFO [4284e4f21222] speech-autodetect-llm: REQ done in 1145 ms
+2026-02-09 19:04:11,303 INFO [4e16c0d1811d] app.api.reports: Generating daily report for 2026-02-09
+2026-02-09 19:04:11,309 WARNING [4e16c0d1811d] app.services.excel_service: No data found in 'call_analytics' table to export.
+2026-02-09 19:04:11,323 INFO [4e16c0d1811d] app.services.excel_service: Successfully exported call analytics to Daily_Report_2026-02-09.xlsx
+2026-02-09 19:04:11,347 INFO [4e16c0d1811d] app.services.email_service: Connecting to SMTP server: smtp.gmail.com:587
+2026-02-09 19:04:13,824 WARNING [4e16c0d1811d] app.services.email_service: Failed to send report via port 587: 'NoneType' object has no attribute 'encode'
+2026-02-09 19:04:13,824 INFO [4e16c0d1811d] app.services.email_service: Connecting to SMTP server: smtp.gmail.com:465
+2026-02-09 19:04:15,223 WARNING [4e16c0d1811d] app.services.email_service: Failed to send report via port 465: 'NoneType' object has no attribute 'encode'
+2026-02-09 19:04:15,224 ERROR [4e16c0d1811d] app.services.email_service: All report email attempts failed.
+2026-02-09 19:04:15,225 INFO [4e16c0d1811d] speech-autodetect-llm: REQ done in 3923 ms
+2026-02-09 19:09:54,805 INFO [175ef6af163e] app.api.reports: Generating daily report for 2026-02-09
+2026-02-09 19:09:54,815 WARNING [175ef6af163e] app.services.excel_service: No data found in 'call_analytics' table to export.
+2026-02-09 19:09:54,848 INFO [175ef6af163e] app.services.excel_service: Successfully exported call analytics to Daily_Report_2026-02-09.xlsx
+2026-02-09 19:09:54,910 INFO [175ef6af163e] app.services.email_service: Connecting to SMTP server: smtp.gmail.com:587
+2026-02-09 19:09:57,274 WARNING [175ef6af163e] app.services.email_service: Failed to send report via port 587: 'NoneType' object has no attribute 'encode'
+2026-02-09 19:09:57,274 INFO [175ef6af163e] app.services.email_service: Connecting to SMTP server: smtp.gmail.com:465
+2026-02-09 19:09:58,560 WARNING [175ef6af163e] app.services.email_service: Failed to send report via port 465: 'NoneType' object has no attribute 'encode'
+2026-02-09 19:09:58,561 ERROR [175ef6af163e] app.services.email_service: All report email attempts failed.
+2026-02-09 19:09:58,562 INFO [175ef6af163e] speech-autodetect-llm: REQ done in 3759 ms
+2026-02-09 19:10:10,190 INFO [b3fdb9237a66] app.services.audio_service: FFmpeg convert ok (494 ms)
+2026-02-09 19:10:10,317 INFO [b3fdb9237a66] app.services.audio_service: FFmpeg convert ok (101 ms)
+2026-02-09 19:10:10,442 INFO [b3fdb9237a66] app.services.audio_service: FFmpeg convert ok (125 ms)
+2026-02-09 19:10:10,554 INFO [b3fdb9237a66] app.services.audio_service: FFmpeg convert ok (111 ms)
+2026-02-09 19:10:10,717 INFO [b3fdb9237a66] app.services.audio_service: FFmpeg convert ok (162 ms)
+2026-02-09 19:10:10,889 INFO [b3fdb9237a66] app.services.audio_service: FFmpeg convert ok (172 ms)
+2026-02-09 19:10:10,890 ERROR [b3fdb9237a66] app.services.audio_service: Failed to create SpeechTranslationConfig. Verify SPEECH_KEY and SPEECH_REGION. Error: 5
+2026-02-09 19:10:10,904 INFO [b3fdb9237a66] speech-autodetect-llm: REQ done in 1248 ms
+2026-02-09 19:11:26,981 INFO [-] app.services.scheduler: SCHEDULER: Started.
+2026-02-09 19:11:26,981 INFO [-] app.services.scheduler: SCHEDULER: Sleeping for 10.0 minutes...
+2026-02-09 19:11:33,563 INFO [897c856e97ac] speech-autodetect-llm: REQ done in 30 ms
+2026-02-09 19:11:58,790 INFO [90ad0f2ede39] speech-autodetect-llm: REQ done in 24 ms
+2026-02-09 19:12:13,502 INFO [7055b41eb2cd] speech-autodetect-llm: REQ done in 0 ms
+2026-02-09 19:12:13,651 INFO [5bfbbe8c112f] speech-autodetect-llm: REQ done in 43 ms
+2026-02-09 19:12:42,284 INFO [66d127ca3367] speech-autodetect-llm: REQ done in 320 ms
+2026-02-09 19:13:02,271 INFO [59f494181f49] app.services.audio_service: FFmpeg convert ok (282 ms)
+2026-02-09 19:13:02,436 INFO [59f494181f49] app.services.audio_service: FFmpeg convert ok (121 ms)
+2026-02-09 19:13:02,561 INFO [59f494181f49] app.services.audio_service: FFmpeg convert ok (124 ms)
+2026-02-09 19:13:02,679 INFO [59f494181f49] app.services.audio_service: FFmpeg convert ok (117 ms)
+2026-02-09 19:13:02,824 INFO [59f494181f49] app.services.audio_service: FFmpeg convert ok (144 ms)
+2026-02-09 19:13:02,989 INFO [59f494181f49] app.services.audio_service: FFmpeg convert ok (164 ms)
+2026-02-09 19:13:06,439 INFO [-] app.services.audio_service: Translated chunk: src_len=67 en_len=66
+2026-02-09 19:13:12,075 INFO [-] app.services.audio_service: Translated chunk: src_len=176 en_len=161
+2026-02-09 19:13:19,800 INFO [-] app.services.audio_service: Translated chunk: src_len=172 en_len=125
+2026-02-09 19:13:29,166 INFO [-] app.services.audio_service: Translated chunk: src_len=192 en_len=120
+2026-02-09 19:13:30,594 INFO [-] app.services.audio_service: Translated chunk: src_len=25 en_len=29
+2026-02-09 19:13:30,598 INFO [-] app.services.audio_service: Translation canceled with EndOfStream (normal for file input).
+2026-02-09 19:13:36,926 INFO [-] app.services.audio_service: Translated chunk: src_len=149 en_len=137
+2026-02-09 19:13:45,729 INFO [-] app.services.audio_service: Translated chunk: src_len=182 en_len=145
+2026-02-09 19:13:48,851 INFO [-] app.services.audio_service: Translated chunk: src_len=66 en_len=63
+2026-02-09 19:13:49,967 INFO [-] app.services.audio_service: Translated chunk: src_len=4 en_len=5
+2026-02-09 19:13:57,107 INFO [-] app.services.audio_service: Translated chunk: src_len=135 en_len=126
+2026-02-09 19:13:57,560 INFO [-] app.services.audio_service: Translated chunk: src_len=4 en_len=5
+2026-02-09 19:13:58,882 INFO [-] app.services.audio_service: Translated chunk: src_len=27 en_len=33
+2026-02-09 19:13:58,890 INFO [-] app.services.audio_service: Translation canceled with EndOfStream (normal for file input).
+2026-02-09 19:14:02,436 INFO [-] app.services.audio_service: Translated chunk: src_len=18 en_len=15
+2026-02-09 19:14:02,796 INFO [-] app.services.audio_service: Translated chunk: src_len=36 en_len=30
+2026-02-09 19:14:06,667 INFO [-] app.services.audio_service: Translated chunk: src_len=147 en_len=144
+2026-02-09 19:14:13,801 INFO [-] app.services.audio_service: Translated chunk: src_len=165 en_len=140
+2026-02-09 19:14:23,537 INFO [-] app.services.audio_service: Translated chunk: src_len=160 en_len=109
+2026-02-09 19:14:26,054 INFO [-] app.services.audio_service: Translated chunk: src_len=49 en_len=42
+2026-02-09 19:14:27,051 INFO [-] app.services.audio_service: Translated chunk: src_len=22 en_len=20
+2026-02-09 19:14:27,053 INFO [-] app.services.audio_service: Translation canceled with EndOfStream (normal for file input).
+2026-02-09 19:14:39,206 INFO [-] app.services.audio_service: Translated chunk: src_len=276 en_len=276
+2026-02-09 19:14:39,983 INFO [-] app.services.audio_service: Translated chunk: src_len=29 en_len=29
+2026-02-09 19:14:53,590 INFO [-] app.services.audio_service: Translated chunk: src_len=259 en_len=259
+2026-02-09 19:14:56,381 INFO [-] app.services.audio_service: Translated chunk: src_len=53 en_len=53
+2026-02-09 19:14:56,385 INFO [-] app.services.audio_service: Translation canceled with EndOfStream (normal for file input).
+2026-02-09 19:15:01,303 INFO [-] app.services.audio_service: Translated chunk: src_len=116 en_len=96
+2026-02-09 19:15:04,071 INFO [-] app.services.audio_service: Translated chunk: src_len=78 en_len=78
+2026-02-09 19:15:12,818 INFO [-] app.services.audio_service: Translated chunk: src_len=193 en_len=183
+2026-02-09 19:15:12,820 INFO [-] app.services.audio_service: Translation canceled with EndOfStream (normal for file input).
+2026-02-09 19:15:28,755 INFO [59f494181f49] httpx: HTTP Request: POST https://voiceintelliopenai.openai.azure.com/openai/deployments/o4-mini/chat/completions?api-version=2025-01-01-preview "HTTP/1.1 200 OK"
+2026-02-09 19:15:28,776 INFO [59f494181f49] app.services.llm_service: LLM completion done in 15318 ms (model=o4-mini)
+2026-02-09 19:15:29,512 INFO [59f494181f49] app.services.excel_service: Successfully exported call analytics to Call_Analytics.xlsx
+2026-02-09 19:15:29,519 INFO [59f494181f49] speech-autodetect-llm: REQ done in 147605 ms
+2026-02-09 19:16:31,815 INFO [2fc021b6e610] app.api.reports: Generating daily report for 2026-02-09
+2026-02-09 19:16:31,943 INFO [2fc021b6e610] app.services.excel_service: Successfully exported call analytics to Daily_Report_2026-02-09.xlsx
+2026-02-09 19:16:32,007 INFO [2fc021b6e610] app.services.email_service: Connecting to SMTP server: smtp.gmail.com:465
+2026-02-09 19:16:35,830 INFO [2fc021b6e610] app.services.email_service: Report email sent to iamvimal3107@gmail.com
+2026-02-09 19:16:35,833 INFO [2fc021b6e610] speech-autodetect-llm: REQ done in 4042 ms
+2026-02-09 19:21:26,983 INFO [-] app.services.scheduler: SCHEDULER: Triggering Batch Report to iamvimal3107@gmail.com
+2026-02-09 19:21:26,984 INFO [-] app.api.reports: Generating batch report for unreported records
+2026-02-09 19:21:27,132 INFO [-] app.services.excel_service: Successfully exported 1 unreported records to Batch_Report_20260209_192126.xlsx
+2026-02-09 19:21:27,160 INFO [-] app.services.excel_service: Marked 1 records as reported.
+2026-02-09 19:21:27,213 INFO [-] app.services.email_service: Connecting to SMTP server: smtp.gmail.com:465
+2026-02-09 19:21:31,051 INFO [-] app.services.email_service: Report email sent to iamvimal3107@gmail.com
+2026-02-09 19:21:31,052 INFO [-] app.services.scheduler: SCHEDULER: Sleeping for 10.0 minutes...

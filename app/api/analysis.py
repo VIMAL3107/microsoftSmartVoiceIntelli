@@ -125,7 +125,10 @@ async def analyze(
             "CallDisposition": qa.get("CallDisposition", ""),
             "FollowUpRequired": qa.get("FollowUpRequired", False),
             "CrossSellUpsellAttempts": qa.get("CrossSellUpsellAttempts", False),
-            "CrossSellUpsellDetails": qa.get("CrossSellUpsellDetails", "")
+            "CrossSellUpsellDetails": qa.get("CrossSellUpsellDetails", ""),
+            "AgentName": qa.get("AgentName", ""),
+            "CustomerName": qa.get("CustomerName", ""),
+            "feedback": feedback_result.get("feedback", "")
         }
         result["username"] = username
 
@@ -133,11 +136,13 @@ async def analyze(
         try:
             db_record = CallAnalytics(
                 user_id=user_id,
+                file_name=file.filename,
                 session_id=str(uuid.uuid4()),
                 detected_language=result.get("detected_language"),
                 recognized_text=result.get("recognized_text"),
                 translation_en=result.get("translation_en"),
                 segments=result.get("segments", []),
+                feedback =result.get("feedback"),
                 caller=result.get("caller"),
                 callee=result.get("callee"),
                 audio_quality=result.get("audio_quality"),
@@ -352,6 +357,8 @@ def get_user_calls(
             "session_id": call.session_id,
             "recognized_text": call.recognized_text,
             "translation_en": call.translation_en,
+            "segments": call.segments,
+            "feedback":call.feedback,
             "conversation_feel": call.conversation_feel,
             "caller": call.caller,
             "callee": call.callee,
@@ -516,7 +523,7 @@ def PDF_Summarization(text: str, model: str = None) -> str:
         # Adjust temperature only if model is not O-series
         if not model.lower().startswith("o4"):
             try:
-                req["temperature"] = float(config.get("AZURE_OPENAI_TEMPERATURE", 0.2))
+                req["temperature"] = float(os.getenv("AZURE_OPENAI_TEMPERATURE", 0.2))
             except Exception:
                 pass
 
