@@ -128,7 +128,7 @@ async def analyze(
             "CrossSellUpsellDetails": qa.get("CrossSellUpsellDetails", ""),
             "AgentName": qa.get("AgentName", ""),
             "CustomerName": qa.get("CustomerName", ""),
-            "feedback": feedback_result.get("feedback", "")
+            "feedback": qa.get("feedback", "")
         }
         result["username"] = username
 
