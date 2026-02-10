@@ -31,12 +31,16 @@ def llm_call_qa_fields(transcript_text: str) -> dict:
         "CallDisposition":{"type":"string"},
         "FollowUpRequired":{"type":"boolean"},
         "CrossSellUpsellAttempts":{"type":"boolean"},
-        "CrossSellUpsellDetails":{"type":"string"}
+        "CrossSellUpsellDetails":{"type":"string"},
+        "AgentName":{"type":"string"},
+        "CustomerName":{"type":"string"},
+        "feedback":{"type":"string"}
       },
       "required":["conversation_feel","agent_improvement_areas","Agent_performance_summary",
                   "ScriptAdherenceScore","PolitenessProfessionalismScore",
                   "ResolutionEffectivenessScore","CsatPrediction","CallDisposition",
-                  "FollowUpRequired","CrossSellUpsellAttempts","CrossSellUpsellDetails"]
+                  "FollowUpRequired","CrossSellUpsellAttempts","CrossSellUpsellDetails",
+                  "AgentName","CustomerName","feedback"]
     }
     SYSTEM = (
         "You are a QA analyst for call centers. Score 1-5 (5 best).\n"
@@ -44,6 +48,7 @@ def llm_call_qa_fields(transcript_text: str) -> dict:
         "- Script adherence: greeting, verification, resolution, closing.\n"
         "- Resolution effectiveness: whether issue addressed.\n"
         "- Politeness/professionalism: tone, respect, no off-topic remarks.\n"
+        "- Extract AgentName and CustomerName if mentioned.\n"
         "Use only the provided transcript. If unknown, infer conservatively."
     )
     diarization_like = f"[00:00:00–00:00:00] Speaker 1: {transcript_text}"

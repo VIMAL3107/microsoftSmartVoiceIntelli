@@ -159,6 +159,8 @@ async def analyze(
                 FollowUpRequired=result.get("FollowUpRequired"),
                 CrossSellUpsellAttempts=result.get("CrossSellUpsellAttempts"),
                 CrossSellUpsellDetails=result.get("CrossSellUpsellDetails"),
+                AgentName=result.get("AgentName"),
+                CustomerName=result.get("CustomerName"),
                 time_taken_sec=result.get("time_taken_sec")
             )
             db.add(db_record)
