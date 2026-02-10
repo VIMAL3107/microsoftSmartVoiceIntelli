@@ -136,7 +136,7 @@ async def analyze(
         try:
             db_record = CallAnalytics(
                 user_id=user_id,
-                file_name=file.filename,
+                file_name=audio.filename,
                 session_id=str(uuid.uuid4()),
                 detected_language=result.get("detected_language"),
                 recognized_text=result.get("recognized_text"),
